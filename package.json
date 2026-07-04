@@ -1,0 +1,26 @@
+{
+  "name": "starter-system",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bootstrap-up": "bash scripts/bootstrap-up.sh",
+    "local:start": "bash scripts/local-start.sh",
+    "local:stop": "bash scripts/local-stop.sh",
+    "dev:server": "node server.js",
+    "dev:web": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "deploy": "bash scripts/deploy.sh",
+    "destroy": "bash scripts/destroy.sh",
+    "url": "bash scripts/url.sh"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.235.1",
+    "constructs": "10.4.5",
+    "esbuild": "0.27.7",
+    "express": "5.2.1",
+    "pg": "8.16.3",
+    "serverless-http": "4.0.0",
+    "vite": "7.3.1"
+  },
+  "devDependencies": {}
+}
