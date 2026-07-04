@@ -1,6 +1,6 @@
 import { App, CfnOutput, Duration, RemovalPolicy, SecretValue, Stack } from "aws-cdk-lib";
-import { InstanceClass, InstanceSize, InstanceType, Port, SecurityGroup, SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
-import { Credentials, DatabaseInstance, DatabaseInstanceEngine, PostgresEngineVersion } from "aws-cdk-lib/aws-rds";
+import { Port, SecurityGroup, SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
+import { AuroraPostgresEngineVersion, ClusterInstance, Credentials, DatabaseCluster, DatabaseClusterEngine } from "aws-cdk-lib/aws-rds";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
@@ -16,16 +16,18 @@ class StarterSystemStack extends Stack {
     const dbSg = new SecurityGroup(this, "DatabaseSg", { vpc });
     dbSg.addIngressRule(lambdaSg, Port.tcp(5432));
 
-    const database = new DatabaseInstance(this, "Database", {
+    const database = new DatabaseCluster(this, "AuroraDatabase", {
       vpc,
       vpcSubnets: { subnetType: SubnetType.PRIVATE_ISOLATED },
       securityGroups: [dbSg],
-      engine: DatabaseInstanceEngine.postgres({ version: PostgresEngineVersion.VER_16 }),
+      engine: DatabaseClusterEngine.auroraPostgres({ version: AuroraPostgresEngineVersion.VER_17_4 }),
       credentials: Credentials.fromPassword("postgres", SecretValue.unsafePlainText(password)),
-      databaseName: "starter",
-      instanceType: InstanceType.of(InstanceClass.T4G, InstanceSize.MICRO),
-      allocatedStorage: 20,
-      backupRetention: Duration.days(0),
+      writer: ClusterInstance.serverlessV2("writer", { enablePerformanceInsights: false }),
+      serverlessV2MinCapacity: 0,
+      serverlessV2MaxCapacity: 1,
+      serverlessV2AutoPauseDuration: Duration.seconds(300),
+      defaultDatabaseName: "starter",
+      backup: { retention: Duration.days(1) },
       deletionProtection: false,
       removalPolicy: RemovalPolicy.DESTROY,
     });
@@ -42,10 +44,11 @@ class StarterSystemStack extends Stack {
         commandHooks: { beforeBundling: () => [], beforeInstall: () => [], afterBundling: (inDir, outDir) => [`cp -r ${inDir}/dist ${outDir}/dist`] },
       },
       environment: {
-        DB_HOST: database.dbInstanceEndpointAddress,
+        DB_HOST: database.clusterEndpoint.hostname,
         DB_NAME: "starter",
         DB_USER: "postgres",
         DB_PASSWORD: password,
+        DB_SSL: "true",
       },
     });
 
