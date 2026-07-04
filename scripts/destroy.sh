@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cdk destroy starter-system --force --app "node infra.js"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
+cdk destroy starter-system --force --app "node services/core/src/cdk/app.js"

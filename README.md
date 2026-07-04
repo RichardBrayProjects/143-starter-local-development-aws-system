@@ -7,18 +7,21 @@ README-01-RUN-LOCALLY.md
 README-02-RUN-IN-AWS.md
 ```
 
-## 01 Run Locally
+## Workspace Layout
 
 ```text
-README-01-RUN-LOCALLY.md
+apps/ui
+services/core
+scripts
 ```
 
-Use this first on a new macOS computer.
+## Common Commands
 
-## 02 Run In AWS
-
-```text
-README-02-RUN-IN-AWS.md
+```bash
+pnpm install
+pnpm run local:start
+pnpm run dev:server
+pnpm run dev:web
+pnpm run package-cleanup
+pnpm run package-clean
 ```
-
-Use this after `README-01-RUN-LOCALLY.md` is complete.

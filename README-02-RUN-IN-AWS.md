@@ -134,12 +134,6 @@ aws sts get-caller-identity
 
 ## Deploy To AWS
 
-Go to the repo:
-
-```bash
-cd ~/src/143-starter-local-development-aws-system
-```
-
 Bootstrap CDK:
 
 ```bash
@@ -166,4 +160,18 @@ Open the URL shown by the command.
 
 ```bash
 pnpm run destroy
+```
+
+---
+
+## Clean Packages
+
+```bash
+pnpm run package-cleanup
+```
+
+Short alias:
+
+```bash
+pnpm run package-clean
 ```

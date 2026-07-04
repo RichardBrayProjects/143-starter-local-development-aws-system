@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 if [[ -d "$HOME/.orbstack/bin" ]]; then export PATH="$HOME/.orbstack/bin:$PATH"; fi
 if [[ -d "/Applications/OrbStack.app/Contents/MacOS/xbin" ]]; then export PATH="/Applications/OrbStack.app/Contents/MacOS/xbin:$PATH"; fi
@@ -14,7 +16,7 @@ elif ! docker ps --format '{{.Names}}' | grep -qx starter-postgres; then
 fi
 
 until docker exec starter-postgres pg_isready -U postgres -d starter >/dev/null 2>&1; do sleep 1; done
-if [[ ! -d node_modules ]]; then pnpm install; fi
+if [[ ! -d "$REPO_ROOT/node_modules" ]]; then pnpm -C "$REPO_ROOT" install; fi
 
 echo "Local database is ready."
 echo "Terminal 1: pnpm run dev:server"

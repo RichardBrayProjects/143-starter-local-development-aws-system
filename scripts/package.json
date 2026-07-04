@@ -1,0 +1,14 @@
+{
+  "name": "@starter/scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bootstrap-up": "bash bootstrap-up.sh",
+    "deploy": "bash deploy.sh",
+    "destroy": "bash destroy.sh",
+    "local:start": "bash local-start.sh",
+    "local:stop": "bash local-stop.sh",
+    "url": "bash url.sh",
+    "package-cleanup": "rm -rf node_modules"
+  }
+}

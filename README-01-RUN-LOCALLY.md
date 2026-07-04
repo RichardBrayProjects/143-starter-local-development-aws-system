@@ -77,9 +77,18 @@ OrbStack provides the `docker` command used by the local scripts.
 
 ```bash
 mkdir -p ~/src
-cd ~/src
-git clone https://github.com/RichardBrayProjects/143-starter-local-development-aws-system.git
-cd 143-starter-local-development-aws-system
+git clone https://github.com/RichardBrayProjects/143-starter-local-development-aws-system.git ~/src/143-starter-local-development-aws-system
+```
+
+Open this folder in Visual Studio Code:
+
+```text
+~/src/143-starter-local-development-aws-system
+```
+
+Install packages from the repo root terminal:
+
+```bash
 pnpm install
 ```
 
@@ -99,10 +108,11 @@ Start the server:
 pnpm run dev:server
 ```
 
-Open a new terminal:
+Open a new repo root terminal.
+
+Start the frontend:
 
 ```bash
-cd ~/src/143-starter-local-development-aws-system
 pnpm run dev:web
 ```
 
@@ -126,6 +136,22 @@ Stop server/frontend terminals with:
 
 ```text
 Ctrl-C
+```
+
+---
+
+## Clean Packages
+
+Remove installed package folders and generated package output:
+
+```bash
+pnpm run package-cleanup
+```
+
+Short alias:
+
+```bash
+pnpm run package-clean
 ```
 
 Next:

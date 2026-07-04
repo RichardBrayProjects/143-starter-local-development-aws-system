@@ -1,2 +1,7 @@
+packages:
+  - "apps/ui"
+  - "services/core"
+  - "scripts"
+
 allowBuilds:
   esbuild: true

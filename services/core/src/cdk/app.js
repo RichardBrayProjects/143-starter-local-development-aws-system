@@ -1,5 +1,5 @@
-import { App, CfnOutput, Duration, RemovalPolicy, SecretValue, Stack } from "aws-cdk-lib";
-import { Port, SecurityGroup, SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
+import { App, CfnOutput, Duration, RemovalPolicy, Stack } from "aws-cdk-lib";
+import { InterfaceVpcEndpointAwsService, Port, SecurityGroup, SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
 import { AuroraPostgresEngineVersion, ClusterInstance, Credentials, DatabaseCluster, DatabaseClusterEngine } from "aws-cdk-lib/aws-rds";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
 import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
@@ -10,18 +10,25 @@ class StarterSystemStack extends Stack {
   constructor(scope, id) {
     super(scope, id, { env: { region: "eu-west-2" } });
 
-    const password = process.env.STARTER_DB_PASSWORD || "Starter12345!";
-    const vpc = new Vpc(this, "Vpc", { maxAzs: 2, natGateways: 0, subnetConfiguration: [{ name: "private", subnetType: SubnetType.PRIVATE_ISOLATED }] });
+    const vpc = new Vpc(this, "Vpc", {
+      maxAzs: 2,
+      natGateways: 0,
+      subnetConfiguration: [{ name: "private", subnetType: SubnetType.PRIVATE_ISOLATED }],
+    });
     const lambdaSg = new SecurityGroup(this, "LambdaSg", { vpc });
     const dbSg = new SecurityGroup(this, "DatabaseSg", { vpc });
     dbSg.addIngressRule(lambdaSg, Port.tcp(5432));
+    vpc.addInterfaceEndpoint("SecretsManagerEndpoint", {
+      service: InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+      subnets: { subnetType: SubnetType.PRIVATE_ISOLATED },
+    });
 
     const database = new DatabaseCluster(this, "AuroraDatabase", {
       vpc,
       vpcSubnets: { subnetType: SubnetType.PRIVATE_ISOLATED },
       securityGroups: [dbSg],
       engine: DatabaseClusterEngine.auroraPostgres({ version: AuroraPostgresEngineVersion.VER_17_4 }),
-      credentials: Credentials.fromPassword("postgres", SecretValue.unsafePlainText(password)),
+      credentials: Credentials.fromGeneratedSecret("postgres"),
       writer: ClusterInstance.serverlessV2("writer", { enablePerformanceInsights: false }),
       serverlessV2MinCapacity: 0,
       serverlessV2MaxCapacity: 1,
@@ -33,24 +40,32 @@ class StarterSystemStack extends Stack {
     });
 
     const fn = new NodejsFunction(this, "WebAndApi", {
-      entry: "server.js",
+      entry: "services/core/src/lambda.js",
       runtime: Runtime.NODEJS_22_X,
       timeout: Duration.seconds(30),
       vpc,
       vpcSubnets: { subnetType: SubnetType.PRIVATE_ISOLATED },
       securityGroups: [lambdaSg],
       bundling: {
-        nodeModules: ["express", "pg", "serverless-http"],
-        commandHooks: { beforeBundling: () => [], beforeInstall: () => [], afterBundling: (inDir, outDir) => [`cp -r ${inDir}/dist ${outDir}/dist`] },
+        commandHooks: {
+          beforeBundling: () => [],
+          beforeInstall: () => [],
+          afterBundling: (inDir, outDir) => [
+            `cp -r ${inDir}/apps/ui/dist ${outDir}/dist`,
+            `cp -r ${inDir}/services/core/src/database/migrations ${outDir}/migrations`,
+          ],
+        },
       },
       environment: {
         DB_HOST: database.clusterEndpoint.hostname,
         DB_NAME: "starter",
         DB_USER: "postgres",
-        DB_PASSWORD: password,
+        DB_SECRET_ARN: database.secret?.secretArn || "",
         DB_SSL: "true",
+        MIGRATIONS_DIR: "migrations",
       },
     });
+    database.secret?.grantRead(fn);
 
     const api = new HttpApi(this, "HttpApi");
     const integration = new HttpLambdaIntegration("Integration", fn);
